@@ -6,15 +6,26 @@
   "scripts": {
     "build": "remix vite:build",
     "dev": "remix vite:dev",
+    "dev:db": "prisma db push --schema=prisma/schema.dev.prisma && prisma generate --schema=prisma/schema.dev.prisma",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/server/index.js",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma db push && remix vite:build"
   },
   "dependencies": {
+    "@prisma/client": "^6.10.1",
     "@remix-run/node": "^2.16.8",
     "@remix-run/react": "^2.16.8",
     "@remix-run/serve": "^2.16.8",
+    "@remix-run/vercel": "^1.19.3",
+    "@types/qrcode": "^1.5.5",
+    "@vercel/postgres": "^0.10.0",
+    "@vercel/remix": "^2.16.7",
     "isbot": "^4.1.0",
+    "nanoid": "^5.1.5",
+    "prisma": "^6.10.1",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
