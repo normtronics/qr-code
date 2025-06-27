@@ -5,10 +5,12 @@ A web application that allows you to create QR codes with dynamically changeable
 ## Features
 
 - **Dynamic URL Management**: Create QR codes that can redirect to different URLs without regenerating the code
-- **QR Code Generation**: Generate high-quality QR codes with customizable appearance
+- **Multiple Format Support**: Download QR codes as PNG, transparent PNG, or SVG formats
 - **Click Tracking**: Monitor how many times each QR code has been scanned
 - **Easy Management**: Simple web interface to create, edit, and delete QR codes
-- **Download QR Codes**: Download generated QR codes as PNG images
+- **Bulk Downloads**: Download all QR codes at once in ZIP archives
+- **Transparent PNGs**: Perfect for overlaying on different backgrounds
+- **Scalable SVGs**: Vector format ideal for print and high-resolution displays
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## How It Works

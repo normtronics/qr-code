@@ -100,7 +100,7 @@ export default function Index() {
   const isCreating = navigation.state === "submitting" && 
                     navigation.formData?.get("intent") === "create";
 
-  const downloadAllQRCodes = async () => {
+  const downloadAllQRCodes = async (format: 'svg' | 'transparent-png') => {
     if (qrCodes.length === 0) return;
     
     try {
@@ -110,24 +110,43 @@ export default function Index() {
       
       for (const qrCode of qrCodes) {
         const shortUrl = `${baseUrl}/r/${qrCode.shortCode}`;
-        const svgContent = await QRCode.default.toString(shortUrl, {
-          type: 'svg',
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        });
         
-        const fileName = `${qrCode.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${qrCode.shortCode}.svg`;
-        zip.file(fileName, svgContent);
+        if (format === 'svg') {
+          const svgContent = await QRCode.default.toString(shortUrl, {
+            type: 'svg',
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          });
+          
+          const fileName = `${qrCode.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${qrCode.shortCode}.svg`;
+          zip.file(fileName, svgContent);
+        } else if (format === 'transparent-png') {
+          const pngDataURL = await QRCode.default.toDataURL(shortUrl, {
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#00000000' // Transparent background
+            }
+          });
+          
+          // Convert data URL to blob
+          const response = await fetch(pngDataURL);
+          const blob = await response.blob();
+          
+          const fileName = `${qrCode.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${qrCode.shortCode}-transparent.png`;
+          zip.file(fileName, blob);
+        }
       }
       
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(zipBlob);
-      link.download = 'qr-codes-collection.zip';
+      link.download = `qr-codes-collection-${format}.zip`;
       link.click();
       URL.revokeObjectURL(link.href);
     } catch (error) {
@@ -209,12 +228,20 @@ export default function Index() {
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-900">Your QR Codes</h2>
             {qrCodes.length > 0 && (
-              <button
-                onClick={() => downloadAllQRCodes()}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
-              >
-                Download All SVG
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => downloadAllQRCodes('svg')}
+                  className="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+                >
+                  Download All SVG
+                </button>
+                <button
+                  onClick={() => downloadAllQRCodes('transparent-png')}
+                  className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Download All PNG (Transparent)
+                </button>
+              </div>
             )}
           </div>
           
@@ -349,6 +376,7 @@ export default function Index() {
 // Component to display QR code
 function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
+  const [qrCodeImageTransparent, setQrCodeImageTransparent] = useState<string | null>(null);
   const [qrCodeSVG, setQrCodeSVG] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -365,9 +393,22 @@ function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
           }
         };
 
-        // Generate PNG version
+        const qrCodeOptionsTransparent = {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#00000000' // Transparent background
+          }
+        };
+
+        // Generate PNG version (white background)
         const qrCodeDataURL = await QRCode.default.toDataURL(shortUrl, qrCodeOptions);
         setQrCodeImage(qrCodeDataURL);
+
+        // Generate PNG version (transparent background)
+        const qrCodeDataURLTransparent = await QRCode.default.toDataURL(shortUrl, qrCodeOptionsTransparent);
+        setQrCodeImageTransparent(qrCodeDataURLTransparent);
 
         // Generate SVG version
         const qrCodeSVGString = await QRCode.default.toString(shortUrl, {
@@ -385,12 +426,16 @@ function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
     generateQRCode();
   }, [shortUrl]);
 
-  const downloadQRCode = (format: 'png' | 'svg') => {
+  const downloadQRCode = (format: 'png' | 'png-transparent' | 'svg') => {
     const link = document.createElement('a');
     
     if (format === 'png' && qrCodeImage) {
       link.download = `${name}-qr-code.png`;
       link.href = qrCodeImage;
+      link.click();
+    } else if (format === 'png-transparent' && qrCodeImageTransparent) {
+      link.download = `${name}-qr-code-transparent.png`;
+      link.href = qrCodeImageTransparent;
       link.click();
     } else if (format === 'svg' && qrCodeSVG) {
       const blob = new Blob([qrCodeSVG], { type: 'image/svg+xml' });
@@ -420,22 +465,28 @@ function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
             alt={`QR Code for ${name}`}
             className="mx-auto mb-4 border border-gray-200 rounded"
           />
-          <div className="flex justify-center space-x-2">
+          <div className="flex justify-center space-x-2 flex-wrap gap-2">
             <button
               onClick={() => downloadQRCode('png')}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
             >
-              Download PNG
+              PNG
+            </button>
+            <button
+              onClick={() => downloadQRCode('png-transparent')}
+              className="px-3 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors text-sm"
+            >
+              PNG (Transparent)
             </button>
             <button
               onClick={() => downloadQRCode('svg')}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
             >
-              Download SVG
+              SVG
             </button>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
-            PNG for web use • SVG for print and scalable graphics
+          <p className="mt-2 text-xs text-gray-500 text-center">
+            PNG for web • Transparent PNG for overlays • SVG for print
           </p>
         </>
       ) : (

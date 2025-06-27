@@ -2,20 +2,24 @@ import QRCode from 'qrcode';
 import { nanoid } from 'nanoid';
 import { db } from './db.server';
 
-export async function generateQRCode(url: string): Promise<string> {
+export async function generateQRCode(url: string, transparent: boolean = false): Promise<string> {
   try {
     const qrCodeDataURL = await QRCode.toDataURL(url, {
       width: 300,
       margin: 2,
       color: {
         dark: '#000000',
-        light: '#FFFFFF'
+        light: transparent ? '#00000000' : '#FFFFFF' // Transparent or white background
       }
     });
     return qrCodeDataURL;
   } catch (error) {
     throw new Error('Failed to generate QR code');
   }
+}
+
+export async function generateQRCodeTransparent(url: string): Promise<string> {
+  return generateQRCode(url, true);
 }
 
 export async function generateQRCodeSVG(url: string): Promise<string> {
