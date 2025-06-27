@@ -18,6 +18,23 @@ export async function generateQRCode(url: string): Promise<string> {
   }
 }
 
+export async function generateQRCodeSVG(url: string): Promise<string> {
+  try {
+    const qrCodeSVG = await QRCode.toString(url, {
+      type: 'svg',
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    return qrCodeSVG;
+  } catch (error) {
+    throw new Error('Failed to generate QR code SVG');
+  }
+}
+
 export async function createQRCode(name: string, targetUrl: string) {
   const shortCode = nanoid(8);
   

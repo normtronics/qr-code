@@ -100,6 +100,42 @@ export default function Index() {
   const isCreating = navigation.state === "submitting" && 
                     navigation.formData?.get("intent") === "create";
 
+  const downloadAllQRCodes = async () => {
+    if (qrCodes.length === 0) return;
+    
+    try {
+      const QRCode = await import('qrcode');
+      const JSZip = await import('jszip');
+      const zip = new JSZip.default();
+      
+      for (const qrCode of qrCodes) {
+        const shortUrl = `${baseUrl}/r/${qrCode.shortCode}`;
+        const svgContent = await QRCode.default.toString(shortUrl, {
+          type: 'svg',
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        
+        const fileName = `${qrCode.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${qrCode.shortCode}.svg`;
+        zip.file(fileName, svgContent);
+      }
+      
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = 'qr-codes-collection.zip';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Failed to download QR codes:', error);
+      alert('Failed to download QR codes. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -170,8 +206,16 @@ export default function Index() {
 
         {/* QR Codes List */}
         <div className="bg-white rounded-lg shadow-md">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-900">Your QR Codes</h2>
+            {qrCodes.length > 0 && (
+              <button
+                onClick={() => downloadAllQRCodes()}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+              >
+                Download All SVG
+              </button>
+            )}
           </div>
           
           {qrCodes.length === 0 ? (
@@ -305,21 +349,32 @@ export default function Index() {
 // Component to display QR code
 function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
+  const [qrCodeSVG, setQrCodeSVG] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const generateQRCode = async () => {
       try {
         const QRCode = await import('qrcode');
-        const qrCodeDataURL = await QRCode.default.toDataURL(shortUrl, {
+        const qrCodeOptions = {
           width: 300,
           margin: 2,
           color: {
             dark: '#000000',
             light: '#FFFFFF'
           }
-        });
+        };
+
+        // Generate PNG version
+        const qrCodeDataURL = await QRCode.default.toDataURL(shortUrl, qrCodeOptions);
         setQrCodeImage(qrCodeDataURL);
+
+        // Generate SVG version
+        const qrCodeSVGString = await QRCode.default.toString(shortUrl, {
+          ...qrCodeOptions,
+          type: 'svg'
+        });
+        setQrCodeSVG(qrCodeSVGString);
       } catch (error) {
         console.error('Failed to generate QR code:', error);
       } finally {
@@ -330,12 +385,20 @@ function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
     generateQRCode();
   }, [shortUrl]);
 
-  const downloadQRCode = () => {
-    if (qrCodeImage) {
-      const link = document.createElement('a');
+  const downloadQRCode = (format: 'png' | 'svg') => {
+    const link = document.createElement('a');
+    
+    if (format === 'png' && qrCodeImage) {
       link.download = `${name}-qr-code.png`;
       link.href = qrCodeImage;
       link.click();
+    } else if (format === 'svg' && qrCodeSVG) {
+      const blob = new Blob([qrCodeSVG], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      link.download = `${name}-qr-code.svg`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -357,12 +420,23 @@ function QRCodeDisplay({ shortUrl, name }: { shortUrl: string; name: string }) {
             alt={`QR Code for ${name}`}
             className="mx-auto mb-4 border border-gray-200 rounded"
           />
-          <button
-            onClick={downloadQRCode}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Download QR Code
-          </button>
+          <div className="flex justify-center space-x-2">
+            <button
+              onClick={() => downloadQRCode('png')}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              Download PNG
+            </button>
+            <button
+              onClick={() => downloadQRCode('svg')}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Download SVG
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            PNG for web use • SVG for print and scalable graphics
+          </p>
         </>
       ) : (
         <p className="text-red-600">Failed to generate QR code</p>
