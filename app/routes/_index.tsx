@@ -198,7 +198,7 @@ export default function Index() {
                           <span className="font-medium">Target URL:</span>{" "}
                           <a 
                             href={qrCode.targetUrl} 
-                            target="_blank" 
+                  target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline break-all"
                           >

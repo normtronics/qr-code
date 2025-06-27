@@ -30,8 +30,6 @@ A web application that allows you to create QR codes with dynamically changeable
 
 ## Installation
 
-### Development Setup
-
 1. Clone the repository:
    ```bash
    git clone <your-repo-url>
@@ -43,71 +41,34 @@ A web application that allows you to create QR codes with dynamically changeable
    npm install
    ```
 
-3. Set up development environment:
+3. Set up environment variables:
    ```bash
-   # Make the setup script executable
-   chmod +x scripts/setup-dev.sh
-   
-   # Run the setup script
-   ./scripts/setup-dev.sh
-   ```
-   
-   Or manually:
-   ```bash
-   # Create .env file
-   echo 'DATABASE_URL="file:./dev.db"' > .env
-   
-   # Setup SQLite database for development
-   npx prisma db push --schema=prisma/schema.dev.prisma
-   npx prisma generate --schema=prisma/schema.dev.prisma
+   npm run setup
+   # Then edit .env with your database URL
    ```
 
-4. Start the development server:
+4. Set up the database:
+   ```bash
+   npm run db:push
+   npm run db:generate
+   ```
+
+5. Start the development server:
    ```bash
    npm run dev
    ```
 
-5. Open your browser and navigate to `http://localhost:5173`
+6. Open your browser and navigate to `http://localhost:5173`
 
-### Vercel Deployment
+## Database Configuration
 
-1. **Prerequisites:**
-   - Vercel account
-   - GitHub repository with your code
+### Local Development
+- **PostgreSQL**: Update `.env` with your PostgreSQL connection string
+- **SQLite**: Change `provider` in `prisma/schema.prisma` to `"sqlite"` and use `DATABASE_URL="file:./dev.db"`
 
-2. **Database Setup:**
-   - Go to your Vercel dashboard
-   - Navigate to Storage → Create Database → Postgres
-   - Create a new PostgreSQL database
-   - Copy the connection strings
-
-3. **Deploy to Vercel:**
-   - Connect your GitHub repository to Vercel
-   - Set environment variables in Vercel dashboard:
-     ```
-     DATABASE_URL=<your-vercel-postgres-url>
-     DIRECT_URL=<your-vercel-postgres-direct-url>
-     ```
-   - Deploy!
-
-4. **Alternative: Vercel CLI deployment:**
-   ```bash
-   # Install Vercel CLI
-   npm i -g vercel
-   
-   # Login to Vercel
-   vercel login
-   
-   # Deploy
-   vercel
-   
-   # Set environment variables
-   vercel env add DATABASE_URL
-   vercel env add DIRECT_URL
-   
-   # Redeploy with environment variables
-   vercel --prod
-   ```
+### Production (Vercel)
+- Uses PostgreSQL automatically
+- See `DEPLOYMENT.md` for detailed setup instructions
 
 ## Usage
 
@@ -175,6 +136,19 @@ app/
 ```bash
 npm run build
 npm start
+```
+
+### Available Scripts
+
+```bash
+npm run setup          # Create .env file with database configuration
+npm run dev           # Start development server
+npm run build         # Build for production
+npm run start         # Start production server
+npm run db:push       # Push database schema changes
+npm run db:generate   # Generate Prisma client
+npm run db:migrate    # Create and run migrations
+npm run db:studio     # Open Prisma Studio (database GUI)
 ```
 
 ## Use Cases
