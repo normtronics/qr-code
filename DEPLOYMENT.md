@@ -53,6 +53,11 @@ DIRECT_URL=postgresql://[direct-connection-string-from-vercel]
 2. Wait for the build to complete
 3. Your app will be available at `https://your-app-name.vercel.app`
 
+**Note:** The custom build script (`scripts/build-vercel.js`) automatically handles:
+- Generating Prisma client
+- Setting up the database (only in Vercel environment)
+- Building the Remix app
+
 ## Post-Deployment
 
 ### Database Migration

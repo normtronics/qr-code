@@ -11,7 +11,7 @@
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma db push && remix vite:build"
+    "vercel-build": "node scripts/build-vercel.js"
   },
   "dependencies": {
     "@prisma/client": "^6.10.1",
